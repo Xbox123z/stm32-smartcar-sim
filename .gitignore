@@ -1,0 +1,9 @@
+/build/
+/target/
+/dist/
+/node_modules/
+*.exe
+*.pdb
+report.json
+telemetry.csv
+.DS_Store

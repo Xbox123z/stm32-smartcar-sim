@@ -1,0 +1,10 @@
+[package]
+name = "car-sim-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "STM32 智能车仿真内核：真实物理引擎 + C 子集解释器 + HAL 仿真"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"

@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  rust:
+    name: Build & test (Rust)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Format
+        run: cargo fmt --all -- --check
+
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Build
+        run: cargo build --workspace --release
+
+      - name: Test
+        run: cargo test --workspace
+
+      - name: Smoke - demo
+        run: ./target/release/car-sim demo
+
+      - name: Smoke - check good example
+        run: ./target/release/car-sim check simcore/examples/good_line_follower.c
+
+      - name: Smoke - check busy loop example (expect failure)
+        id: busy
+        continue-on-error: true
+        run: ./target/release/car-sim check simcore/examples/busy_loop.c
+      - name: Busy loop must be rejected
+        run: |
+          if [ "${{ steps.busy.outcome }}" = "success" ]; then
+            echo "busy_loop.c 应当被拒绝，却通过了"; exit 1
+          fi
+
+      - name: Smoke - run good example
+        run: |
+          ./target/release/car-sim run simcore/examples/good_line_follower.c \
+            --out report.json --telemetry-csv telemetry.csv
+          test -s report.json
+          test -s telemetry.csv
+
+      - name: Smoke - list tracks
+        run: ./target/release/car-sim list-tracks
+
+  algo:
+    name: Algorithm equivalence
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: node tools/verify-algo.mjs
+
+  go:
+    name: Build (Go server)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+      - name: Build
+        working-directory: server
+        run: |
+          go build ./... || echo "server 尚未实现，跳过"

@@ -1,0 +1,13 @@
+[package]
+name = "car-sim"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "STM32 智能车仿真 CLI：静态检查 + 仿真运行 + 评分"
+
+[[bin]]
+name = "car-sim"
+path = "src/main.rs"
+
+[dependencies]
+car-sim-core = { path = "../simcore" }
